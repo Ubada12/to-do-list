@@ -14,6 +14,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    outDir: 'dist', // Make sure this is correctly set
+  },
   server: {
     https: {
       key: fs.readFileSync(keyPath), // Path to the private key
