@@ -29,7 +29,7 @@ import TaskAlert from './TaskAlert';  // Import TaskAlert component
 async function updateTask(email, task){
   try {
     console.log('Updating task:', task._id);
-    const response = await fetch(`http://localhost:5000/api/tasks/${task._id}`, {
+    const response = await fetch(`https://to-do-list-backend-hazel.vercel.app/api/tasks/${task._id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -43,8 +43,10 @@ async function updateTask(email, task){
 
     const data = await response.json();
     console.log('Task updated:', data);
+    return true;
   } catch (error) {
     console.error('Error updating task:', error);
+    return false;
   }
 }
 
@@ -52,7 +54,7 @@ async function createTask(email, task){
   try {
     task.completed= true;
     console.log('Creating task:', task);
-    const response = await fetch('http://localhost:5000/api/tasks/', {
+    const response = await fetch('https://to-do-list-backend-hazel.vercel.app/api/tasks/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -66,15 +68,17 @@ async function createTask(email, task){
 
     const data = await response.json();
     console.log('Task created:', data);
+    return true;
   } catch (error) {
     console.error('Error creating task:', error);
+    return false;
   }
 }
 
 async function DeleteTask(email, task){
   try {
     console.log('Deleting task:', task);
-    const response = await fetch(`http://localhost:5000/api/tasks/${task._id}`, {
+    const response = await fetch(`https://to-do-list-backend-hazel.vercel.app/api/tasks/${task._id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
@@ -88,8 +92,10 @@ async function DeleteTask(email, task){
 
     const data = await response.json();
     console.log('Task deleted:', data);
+    return true;
   } catch (error) {
     console.error('Error deleting task:', error);
+    return false;
   }
 }
 
@@ -168,9 +174,15 @@ const TaskList = ({ changesDetected }) => {
     console.log('Saving task:', editedTask);
     if(areObjectsDifferent(task, editedTask))
     {
-      await updateTask(user.email, editedTask);
-      console.log('Task saved!');
-      (editedTask.daily === true) ? await fetchTasks('daily', setDailyTasks) : await fetchTasks('regular', setRegularTasks);
+      if(await updateTask(user.email, task))
+      {
+        console.log('Task updated!');
+        (editedTask.daily === true) ? await fetchTasks('daily', setDailyTasks) : await fetchTasks('regular', setRegularTasks);
+      }
+      else
+      {
+        alert('Error updating task');
+      }
     }
     else
     {
@@ -190,7 +202,7 @@ const TaskList = ({ changesDetected }) => {
       console.log(`Fetching ${category} tasks...`);
       
       const response = await fetch(
-        `http://localhost:5000/api/tasks/?email=${user.email}&category=${category}`,
+        `https://to-do-list-backend-hazel.vercel.app/api/tasks/?email=${user.email}&category=${category}`,
         {
           method: 'GET',
           headers: {
@@ -230,28 +242,44 @@ const TaskList = ({ changesDetected }) => {
       if (!undoTask) {
         setUndoTask(false);
         console.log('Task completed!');
-        await DeleteTask(user.email, task);
-        await createTask(user.email, task);
-        await fetchTasks('daily', setDailyTasks);
-        await fetchTasks('regular', setRegularTasks);
-        await fetchTasks('completed', setCompletedTasks);
+        
+        if (await DeleteTask(user.email, task)) {
+          if (await createTask(user.email, task)) {
+            console.log('Task completed and created!');
+            await fetchTasks('daily', setDailyTasks);
+            await fetchTasks('regular', setRegularTasks);
+            await fetchTasks('completed', setCompletedTasks);
+          } else {
+            alert('Error creating task!');
+          }
+        } else {
+          alert('Error deleting task!');
+        }
+        
       }
     }, 8000);
   }
 
   const handleDeleteIconClick = async (task) => {
+    const trimmedTitle = task.title.trim().substring(0, 30);
     console.log('Delete icon clicked!', task);
-    setAlertText(`Task "${task.title}" deleted!`);
+    setAlertText(`Task "${trimmedTitle}" deleted!`);
     setShowAlert(true);  // Show alert when the icon is clicke
     setTimeout(async () => {
       console.log('Alert timeout!');
       if (!undoTask) {
         setUndoTask(false);
         console.log('Task  Deleted!!');
-        await DeleteTask(user.email, task);
+        if(await DeleteTask(user.email, task))
+        {
         await fetchTasks('daily', setDailyTasks);
         await fetchTasks('regular', setRegularTasks);
         await fetchTasks('completed', setCompletedTasks);
+        }
+        else
+        {
+          alert('Error deleting task!');
+        }
       }
     }, 8000);
   }
@@ -393,7 +421,7 @@ const TaskList = ({ changesDetected }) => {
                               animation: `${pulse} 2s infinite`, // Pulse animation on hover
                             }}
                           >
-                            {editingTaskId === task.id ? <SaveIcon color="primary" /> : <EditIcon color="primary" />}
+                            {editingTaskId === task._id ? <SaveIcon color="primary" /> : <EditIcon color="primary" />}
                           </IconButton>
                           <IconButton
                             edge="end"

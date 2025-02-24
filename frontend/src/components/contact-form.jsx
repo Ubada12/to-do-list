@@ -50,7 +50,7 @@ console.log(date_time);
   }
 
   try {
-    const response = await fetch("http://localhost:5000/api/tasks/send-email", {
+    const response = await fetch("https://to-do-list-backend-hazel.vercel.app/api/tasks/send-email", {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -143,6 +143,7 @@ export default function ContactForm() {
     form.setValue("email", "");
     form.setValue("phone", "");
     form.setValue("message", "");
+    window.location.reload(); // Refresh the page
     setIsSubmitted(false); // Reset to show the contact form again
   };
 
